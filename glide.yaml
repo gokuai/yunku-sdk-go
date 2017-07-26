@@ -1,0 +1,4 @@
+package: github.com/yunku-sdk-go
+import:
+- package: github.com/tidwall/gjson
+- package: repo.gokuai.cn/golang/common

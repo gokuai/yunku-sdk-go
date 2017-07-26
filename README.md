@@ -1,1 +1,1 @@
-# yunku-sdk-go
+# Yunku SDK for golang
