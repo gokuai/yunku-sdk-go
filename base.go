@@ -27,15 +27,15 @@ type Error struct {
 type Result struct {
     error *Error
     data *gjson.Result
-}
-
-type BaseSDK struct {
-    config *Config
     ResponseStatusCode int
     ResponseBody       []byte
 }
 
-func (this *BaseSDK) ResponseToString() string {
+type BaseSDK struct {
+    config *Config
+}
+
+func (this *Result) ResponseToString() string {
     result := strconv.Itoa(this.ResponseStatusCode)
     if this.ResponseBody != nil {
         result += ":" + string(this.ResponseBody)
@@ -44,9 +44,6 @@ func (this *BaseSDK) ResponseToString() string {
 }
 
 func (this *BaseSDK) Post(api string, params map[string]string) (*Result, error) {
-    this.ResponseStatusCode = 0
-    this.ResponseBody = nil
-
     params["dateline"] = strconv.FormatInt(time.Now().Unix(), 10)
     sign := mcrypt.Signature(params, this.config.ClientSecret)
     params["sign"] = sign
@@ -61,19 +58,20 @@ func (this *BaseSDK) Post(api string, params map[string]string) (*Result, error)
     }
     defer resp.Body.Close()
 
-    this.ResponseStatusCode = resp.StatusCode
     body, err := ioutil.ReadAll(resp.Body)
     if err != nil {
         return nil, err
     }
-    result := &Result{}
-    this.ResponseBody = body
+    result := &Result{
+        ResponseStatusCode: resp.StatusCode,
+        ResponseBody: body,
+    }
     if resp.StatusCode == 200 {
-        jsonResult := gjson.Parse(string(this.ResponseBody))
+        jsonResult := gjson.Parse(string(body))
         result.data = &jsonResult
     } else {
         result.error = &Error{}
-        err = json.Unmarshal(this.ResponseBody, result.error)
+        err = json.Unmarshal(body, result.error)
         if err != nil {
             return nil, err
         }
